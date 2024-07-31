@@ -4418,3 +4418,121 @@ AWS Managed Services: Provides tight integration with AWS services and can be ea
 
 Choose the one that best fits your team's skills and existing infrastructure. Remember to implement proper IAM roles and permissions for each service to maintain security throughout your CI/CD pipeline.
 ```
+32. I have a question about managing traffic spikes for a restaurant website hosted on an EC2 instance. The website experiences a significant increase in traffic between 3:00 PM and 5:00 PM, and I plan to use an Auto Scaling Group to handle this by launching additional EC2 instances during this peak time. 
+
+However, I'm unsure how to set this up with an Application Load Balancer (ALB). Initially, there will be only one EC2 instance as the target for the ALB. When the traffic spikes between 3:00 PM and 5:00 PM, the Auto Scaling Group will launch additional instances. 
+
+How do I configure the ALB to automatically include these new instances as targets during the peak traffic period, even though they don't exist when I first set up the ALB? Can you please explain how this process works?
+
+```
+I understand your confusion about how Auto Scaling groups work with Application Load Balancers (ALB) in AWS, especially when dealing with scheduled scaling. Let me break down the process and explain how it works:
+
+Initial Setup:
+
+You have your restaurant website running on a single EC2 instance.
+You create an Application Load Balancer (ALB) for this website.
+
+
+Auto Scaling Group Configuration:
+
+Create an Auto Scaling group with your initial EC2 instance.
+Configure scheduled actions for the Auto Scaling group to increase capacity during peak hours (3:00 PM to 5:00 PM).
+
+
+ALB Target Group:
+
+Create a target group in the ALB.
+Instead of adding individual EC2 instances to the target group, you associate the Auto Scaling group with the target group.
+
+
+Auto Scaling and ALB Integration:
+
+When you associate the Auto Scaling group with the ALB's target group, AWS automatically handles the registration and deregistration of instances.
+You don't need to manually add targets to the ALB. The Auto Scaling group takes care of this dynamically.
+
+
+How it works during scaling:
+
+At 3:00 PM, when the scheduled action triggers, the Auto Scaling group creates a new EC2 instance.
+The Auto Scaling group automatically registers this new instance with the ALB's target group.
+The ALB starts sending traffic to both instances.
+At 5:00 PM, when the scale-in occurs, the Auto Scaling group terminates the extra instance and automatically deregisters it from the ALB.
+
+
+
+The key point is that you don't manually add or remove instances from the ALB. By associating the Auto Scaling group with the ALB's target group, AWS handles the dynamic addition and removal of instances automatically.
+To set this up:
+
+Create your ALB and configure listeners.
+Create a target group, but don't add any targets manually.
+Create your Auto Scaling group, and in the configuration, specify the target group you created.
+Set up your scheduled actions in the Auto Scaling group.
+
+This way, your ALB will always have the correct targets, whether it's just one instance or multiple instances during peak hours.
+
+Certainly, I'll explain how to create an Auto Scaling group and configure it for your scenario. Here's a step-by-step guide:
+
+Create a Launch Template or Launch Configuration:
+
+This defines the EC2 instance configuration (AMI, instance type, security groups, etc.) that the Auto Scaling group will use.
+
+
+Create the Auto Scaling group:
+
+Go to the EC2 dashboard in AWS Console and select "Auto Scaling Groups"
+Click "Create Auto Scaling group"
+Choose a name for your group
+Select the Launch Template or Launch Configuration you created
+
+
+Configure Auto Scaling group details:
+
+Choose the VPC and subnets where instances should be launched
+Attach it to the Application Load Balancer:
+
+Select "Attach to an existing load balancer"
+Choose your ALB's target group
+
+
+
+
+Set the group size:
+
+Minimum: 1 (your base instance)
+Desired: 1 (start with one instance)
+Maximum: 2 (or however many you want during peak hours)
+
+
+Configure scaling policies:
+
+For your case, we'll use scheduled actions
+In the Auto Scaling group, go to "Scheduled Actions"
+Create a new scheduled action:
+
+Name: "Increase Capacity for Peak Hours"
+Start time: 3:00 PM
+Recurrence: Daily
+Desired capacity: 2 (or your peak number)
+
+
+Create another scheduled action:
+
+Name: "Decrease Capacity after Peak Hours"
+Start time: 5:00 PM
+Recurrence: Daily
+Desired capacity: 1
+
+
+
+
+Review and create the Auto Scaling group
+
+With this configuration:
+
+Your website will run on one instance most of the time
+At 3:00 PM daily, it will scale up to two instances
+At 5:00 PM daily, it will scale back down to one instance
+
+The Auto Scaling group automatically handles adding the new instance to the ALB's target group during scale-out and removing it during scale-in.
+Remember to monitor and adjust these settings based on your actual traffic patterns. You might also want to consider setting up CloudWatch alarms for more dynamic scaling based on metrics like CPU utilization or request count
+```
